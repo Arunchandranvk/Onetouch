@@ -86,8 +86,26 @@ class ProfileUpdateView(APIView):
         except Exception as e:
             return Response(
                 data={"Status": "Failed", "Msg": str(e)},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
 
+
+class CategoryCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+    @swagger_auto_schema(
+        request_body=CategorySerializer,
+        responses={
+            200:openapi.Response('Category Added....',CategorySerializer),
+            400: 'Validation errors'
+        }
+    )
+    def post(self,request):
+        ser=CategorySerializer(data=request.data,context={'request': request})
+        if ser.is_valid():    
+            ser.save()
+            return Response(data={"Status": "Success", "Msg": "Category Added!!!!", "data": ser.data}, status=status.HTTP_200_OK)
+        else:
+            return Response(data={"Status":"Failed","Msg":"Something went wrong....","Errors":ser.errors},status=status.HTTP_400_BAD_REQUEST)  
+   
 
 class ProductCreateView(APIView):
     permission_classes = [IsAuthenticated]
@@ -104,7 +122,6 @@ class ProductCreateView(APIView):
         # print(ser)
         if ser.is_valid():    
             ser.save()
-            print(ser.data)
             return Response(data={"Status": "Success", "Msg": "Product Added!!!!", "data": ser.data}, status=status.HTTP_200_OK)
         else:
             return Response(data={"Status":"Failed","Msg":"Something went wrong....","Errors":ser.errors},status=status.HTTP_400_BAD_REQUEST)  
@@ -118,7 +135,7 @@ class ProductGetView(APIView):
             id=kwargs.get('pk')
             products=Products.objects.get(id=id)
             pro=ProductSer(products)
-            return Response(data={"Msg": "All Products","data":pro.data}, status=status.HTTP_200_OK)
+            return Response(data={"data":pro.data}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response(data={"Msg": str(e)}, status=status.HTTP_404_NOT_FOUND)
         
@@ -137,8 +154,6 @@ class ProductUpdateView(APIView):
         try:
             product=Products.objects.get(id=product_id)
             print(request.user)
-            if product.user!=request.user:
-                return Response(data={"Status":"Failed","Msg":"Unauthorized access: You do not have permission to modify this product."},status=status.HTTP_401_UNAUTHORIZED)
             ser=ProductSer(product,data=request.data,partial=True) 
             if ser.is_valid():
                 ser.save()  
@@ -159,9 +174,6 @@ class ProductDeleteView(APIView):
         try:
             product_id=kwargs.get('pk')
             product=Products.objects.get(id=product_id)
-            print(request.user)
-            if product.user!=request.user:
-                return Response(data={"Status":"Failed","Msg":"Unauthorized access: You do not have permission to delete this product."},status=status.HTTP_401_UNAUTHORIZED)
             product.delete()
             return Response({"Status":"Success","Msg":f"{product.name} Deleted Successfully!!!!!"})
         except Exception as e:

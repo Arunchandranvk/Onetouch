@@ -91,3 +91,8 @@ class ProductSer(serializers.ModelSerializer):
             for image_file in image_files[:5]:  
                 ProductImage.objects.create(product=instance, image=image_file)
         return instance
+    
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model=Categories
+        fields=['category_name','category_image']

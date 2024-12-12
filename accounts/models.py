@@ -58,7 +58,6 @@ class CustomUser(AbstractBaseUser,PermissionsMixin):
 
 
 class Categories(models.Model):
-    user_id=models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name='cat_user')
     category_name=models.CharField(max_length=200)
     category_image=models.ImageField(upload_to='Category Images')
 
