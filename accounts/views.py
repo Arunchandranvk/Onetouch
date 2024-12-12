@@ -106,6 +106,16 @@ class CategoryCreateView(APIView):
         else:
             return Response(data={"Status":"Failed","Msg":"Something went wrong....","Errors":ser.errors},status=status.HTTP_400_BAD_REQUEST)  
    
+class AllCategoryView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+    def get(self,request):
+        try:
+            category=Categories.objects.all()
+            cat=ProductSer(category,many=True)
+            return Response(data={"Msg": "All Categories","data":cat.data}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(data={"Msg": str(e)}, status=status.HTTP_404_NOT_FOUND)
 
 class ProductCreateView(APIView):
     permission_classes = [IsAuthenticated]

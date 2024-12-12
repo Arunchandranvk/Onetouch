@@ -5,7 +5,8 @@ urlpatterns = [
         #common
         path('login',LoginView.as_view(),name='log'),
         path('product/<int:pk>/',ProductGetView.as_view(),name='product'),
-        path('product-all/',AllProductsView.as_view(),name='all'),
+        path('product-all/',AllProductsView.as_view(),name='all-product'),
+        path('category-all/',AllCategoryView.as_view(),name='all-category'),
 
         #User
 
