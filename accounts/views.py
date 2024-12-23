@@ -113,9 +113,9 @@ class AllCategoryView(APIView):
         try:
             category=Categories.objects.all()
             cat=ProductSer(category,many=True)
-            return Response(data={"Msg": "All Categories","data":cat.data}, status=status.HTTP_200_OK)
+            return Response(data={"Status":"Success","Msg": "All Categories","data":cat.data}, status=status.HTTP_200_OK)
         except Exception as e:
-            return Response(data={"Msg": str(e)}, status=status.HTTP_404_NOT_FOUND)
+            return Response(data={"Status":"Failed","Msg": str(e)}, status=status.HTTP_404_NOT_FOUND)
 
 class ProductCreateView(APIView):
     permission_classes = [IsAuthenticated]
@@ -145,9 +145,9 @@ class ProductGetView(APIView):
             id=kwargs.get('pk')
             products=Products.objects.get(id=id)
             pro=ProductSer(products)
-            return Response(data={"data":pro.data}, status=status.HTTP_200_OK)
+            return Response(data={"Status":"Success","data":pro.data}, status=status.HTTP_200_OK)
         except Exception as e:
-            return Response(data={"Msg": str(e)}, status=status.HTTP_404_NOT_FOUND)
+            return Response(data={"Status":"Failed","Msg": str(e)}, status=status.HTTP_404_NOT_FOUND)
         
         
 class ProductUpdateView(APIView):
@@ -185,7 +185,7 @@ class ProductDeleteView(APIView):
             product_id=kwargs.get('pk')
             product=Products.objects.get(id=product_id)
             product.delete()
-            return Response({"Status":"Success","Msg":f"{product.name} Deleted Successfully!!!!!"})
+            return Response({"Status":"Success","Msg":f"{product.product_name} Deleted Successfully!!!!!"})
         except Exception as e:
             return Response({"Status":"Failed","Error":str(e)},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
@@ -196,6 +196,267 @@ class AllProductsView(APIView):
         try:
             products=Products.objects.all()
             pro=ProductSer(products,many=True)
-            return Response(data={"Msg": "All Products","data":pro.data}, status=status.HTTP_200_OK)
+            return Response(data={"Status":"Success","Msg": "All Products","data":pro.data}, status=status.HTTP_200_OK)
         except Exception as e:
-            return Response(data={"Msg": str(e)}, status=status.HTTP_404_NOT_FOUND)
+            return Response(data={"Status":"Failed","Msg": str(e)}, status=status.HTTP_404_NOT_FOUND)
+        
+
+class CateogoryProductListView(APIView):
+    permission_classes=[IsAuthenticated]
+    authentication_classes=[JWTAuthentication]
+    def get(self,request,**kwargs):
+        try:
+            category_id=kwargs.get('pk')
+            cat=Categories.objects.get(id=category_id)
+            products=Products.objects.filter(category_name=category_id)
+            ser=ProductSer(products,many=True)
+            return Response(data={"Status":"Success","Msg":f"Products listed in {cat.category_name} Category","data":ser.data},status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(data={"Status":"Failed","Msg":str(e)},status=status.HTTP_404_NOT_FOUND)
+        
+
+class CategoryUpdateView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+    @swagger_auto_schema(
+        request_body=CategorySerializer,    
+        responses={
+            200:openapi.Response('Category Updated....',CategorySerializer),
+            400: 'Validation errors'
+        })
+    def put(self,request,**kwargs):
+        try:
+            category_id=kwargs.get('pk')
+            cat=Categories.objects.get(id=category_id)
+            ser=CategorySerializer(cat,data=request.data,partial=True)
+            if ser.is_valid():
+                ser.save()  
+                return Response(data={"Status":"Success","Msg":f"Category  updated successfully","data": ser.data},status=status.HTTP_200_OK)
+            else:
+                return Response(data={"Status": "Failed", "Msg": "Invalid data", "Errors": ser.errors},status=status.HTTP_400_BAD_REQUEST)
+        except Categories.DoesNotExist:
+            return Response(data={"Status": "Failed", "Msg": "Category not found"},status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response(data={"Status": "Failed", "Msg": str(e)},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+class AppoinmentCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+    @swagger_auto_schema(
+        request_body=AppoinmentSerializer,
+        responses={
+            200:openapi.Response('Appointment Added....',AppoinmentSerializer),
+            400: 'Validation errors'
+        }
+    )
+    def post(self,request):
+        try:
+            ser=AppoinmentSerializer(data=request.data)
+            if ser.is_valid():    
+                ser.save()
+                return Response(data={"Status": "Success", "Msg": "Appointment Added!!!!", "data": ser.data}, status=status.HTTP_200_OK)
+            else:
+                return Response(data={"Status":"Failed","Msg":"Something went wrong....","Errors":ser.errors},status=status.HTTP_400_BAD_REQUEST)  
+        except Exception as e:
+            return Response(data={"Status": "Failed", "Msg": str(e)},status=status.HTTP_500_INTERNAL_SERVER_ERROR)     
+        
+
+
+class AppointmentsUserView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+    def get(self,request):  
+        try:
+            user=request.user.id
+            print(user)
+            app=Appoinment.objects.filter(user_id=user)
+            ser=AppoinmentSerializer(app,many=True)
+            return Response(data={"Status":"Success","Msg": "User Appointments","data":ser.data}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(data={"Status":"Failed","Msg": str(e)}, status=status.HTTP_404_NOT_FOUND)
+        
+
+class AllAppointmentsView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+    def get(self,request):  
+        try:
+            app=Appoinment.objects.all()
+            ser=AppoinmentSerializer(app,many=True)
+            return Response(data={"Status":"Success","Msg": "All Appointments","data":ser.data}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(data={"Status":"Failed","Msg": str(e)}, status=status.HTTP_404_NOT_FOUND)
+        
+
+class AppontmentStatusUpdateView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+    @swagger_auto_schema(
+        request_body=AppoinmentStatusSerializer,    
+        responses={
+            200:openapi.Response('Appointment Status Updated....',AppoinmentStatusSerializer),
+            400: 'Validation errors'
+        })
+    def put(self,request,**kwargs):
+        try:
+            app_id=kwargs.get('pk')
+            app=Appoinment.objects.get(id=app_id)
+            ser=AppoinmentStatusSerializer(app,data=request.data,partial=True)
+            if ser.is_valid():
+                ser.save()  
+                return Response(data={"Status":"Success","Msg":f"Appointment Status  updated successfully","data": ser.data},status=status.HTTP_200_OK)
+            else:
+                return Response(data={"Status": "Failed", "Msg": "Invalid data", "Errors": ser.errors},status=status.HTTP_400_BAD_REQUEST)
+        except Categories.DoesNotExist:
+            return Response(data={"Status": "Failed", "Msg": "Appointment not found"},status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response(data={"Status": "Failed", "Msg": str(e)},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+class CartItemCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+    @swagger_auto_schema(
+        request_body=CartItemSerializer,    
+        responses={
+            200:openapi.Response('Cart Item Added....',CartItemSerializer),
+            400: 'Validation errors'
+        })
+    def post(self, request):
+        cart, created = Cart.objects.get_or_create(user=request.user)
+        product_id = request.data.get('product')
+        print(product_id)
+        quantity = request.data.get('quantity')
+        print(quantity)
+        try:
+            product = Products.objects.get(id=product_id)
+        except Products.DoesNotExist:
+            return Response({'detail': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
+        if quantity > product.stock:
+            return Response({'detail': 'Not enough stock available'}, status=status.HTTP_400_BAD_REQUEST)
+        if quantity < 1:
+            return Response({'detail':'Quantity must be at least 1.'})
+        
+        cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product)
+        cart.total_amount = sum(item.total_price for item in cart.items.all())
+        cart.save()
+        ser=CartItemSerializer(cart_item)
+        return Response(data={"Status":"Success","Msg":"Product added to cart","data":ser.data}, status=status.HTTP_201_CREATED)
+
+from decimal import Decimal
+import random
+
+class CartItemListView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        cart = Cart.objects.get(user=request.user)
+        total=cart.total_amount
+        tax = round(total * Decimal("0.025"), 2)
+        total_with_tax = round(total + tax, 2)
+        cart.tax=tax
+        cart.total_payable=total_with_tax
+        cart.save()
+        if not cart:
+            return Response({'detail': 'No active items found'}, status=status.HTTP_200_OK)
+        serializer = CartItemSer(cart.items.all(), many=True)
+        return Response(data={"Status":"Success","Msg":"My Cart Items","data":serializer.data,'Total Amount':total,'tax':tax,'payable':total_with_tax},status=status.HTTP_200_OK)
+    
+
+class CartProductQuantityUpdateView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+    @swagger_auto_schema(
+        request_body=CartItemQuantitySer,    
+        responses={
+            200:openapi.Response('Cart Product Quantity  Updated....',CartItemQuantitySer),
+            400: 'Validation errors'
+        })
+    def put(self,request,**kwargs):
+        try:
+            cartitem_id=kwargs.get('pk')
+            cartitem=CartItem.objects.get(id=cartitem_id)
+            new_quantity = request.data.get('quantity')
+            product = cartitem.product
+            if new_quantity > product.stock:
+                return Response(
+                    data={"Status": "Failed", "Msg": "Not enough stock available."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            ser=CartItemQuantitySer(cartitem,data=request.data,partial=True)
+            if ser.is_valid():
+                ser.save()  
+                serializer=CartItemSer(cartitem)
+                cartitem.cart.total_amount = sum(item.total_price for item in cartitem.cart.items.all())
+                cartitem.cart.save()
+
+                return Response(data={"Status":"Success","Msg":f"Product Quantity  updated successfully","data": serializer.data},status=status.HTTP_200_OK)
+            else:
+                return Response(data={"Status": "Failed", "Msg": "Invalid data", "Errors": ser.errors},status=status.HTTP_400_BAD_REQUEST)
+        except Categories.DoesNotExist:
+            return Response(data={"Status": "Failed", "Msg": "Appointment not found"},status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response(data={"Status": "Failed", "Msg": str(e)},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class CartItemDeleteView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+
+    @swagger_auto_schema(
+        responses={
+            200: openapi.Response('Cart Item Deleted'),
+            404: 'Cart Item not found',
+            400: 'Bad Request'
+        })
+    def delete(self, request, **kwargs):
+        try:
+            cartitem_id = kwargs.get('pk')
+            cartitem = CartItem.objects.get(id=cartitem_id)
+            if cartitem.cart.user != request.user:
+                return Response({"Status": "Failed", "Msg": "You do not have permission to delete this item."},
+                                status=status.HTTP_403_FORBIDDEN)
+            cartitem.delete()
+            cartitem.cart.total_amount = sum(item.total_price for item in cartitem.cart.items.all())
+            cartitem.cart.save()
+
+            return Response(data={"Status": "Success", "Msg": "Cart Item deleted successfully"},
+                            status=status.HTTP_200_OK)
+        except CartItem.DoesNotExist:
+            return Response(data={"Status": "Failed", "Msg": "Cart Item not found"},
+                            status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response(data={"Status": "Failed", "Msg": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# class CartOrderCreateView(APIView):
+#     permission_classes = [IsAuthenticated]
+#     def post(self, request):
+#         cart = Cart.objects.get(user=request.user)
+#         if not cart:
+#             return Response({'detail': 'No active cart found'}, status=status.HTTP_404_NOT_FOUND)
+
+#         shipping_address = request.data.get('shipping_address')
+#         if not shipping_address:
+#             return Response({'detail': 'Shipping address is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+#         order = Order.objects.create(cart=cart, user=request.user, shipping_address=shipping_address)
+#         for cart_items in cart.cart_items.all():
+#         # order.update_total_amount()  
+#         cart.delete()
+#         return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
+
+
+class OrderCreateView(APIView):
+    authentication_classes = [JWTAuthentication]
+    @swagger_auto_schema(
+        request_body=OrderSerializer,    
+        responses={
+            200:openapi.Response('Product Ordered....',OrderSerializer),
+            400: 'Validation errors'
+        })
+
+    def post(self, request, *args, **kwargs):
+        serializer = OrderSerializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        order = serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
