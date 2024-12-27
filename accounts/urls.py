@@ -20,7 +20,10 @@ urlpatterns = [
         path('cart-all/',CartItemListView.as_view(),name='cart-my'),
         path('cart-quantity-update/<int:pk>/',CartProductQuantityUpdateView.as_view(),name='cart-quantity'),
         path('cart-item-delete/<int:pk>/',CartItemDeleteView.as_view(),name='cart-item-delete'),
-        path('checkout/',OrderCreateView.as_view(),name='checkout'),
+        path('cart-checkout/',cart_checkout,name='checkout-cart'),
+        path('checkout/<int:product_id>/',Direct_checkout,name='checkout'),
+        path('my-orders/',my_orders,name='myorders'),
+        path('cart-status/<int:product_id>/',product_in_cart,name='cart-status'),
         
         #Admin
         path('product-create/',ProductCreateView.as_view(),name='product_add'),
@@ -29,4 +32,6 @@ urlpatterns = [
         path('category-create/',CategoryCreateView.as_view(),name='cat_create'),
         path('appointment-all/',AllAppointmentsView.as_view(),name='app-all'),
         path('appointment-status-Update/<int:pk>/',AppontmentStatusUpdateView.as_view(),name='app-status-up'),
+        path('all-orders/',AllOrders,name='all-order'),
+        path('update-order-status/<int:order_id>/',update_order_status,name='ordr-status')
     ]

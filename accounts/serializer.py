@@ -55,7 +55,7 @@ class ProductSer(serializers.ModelSerializer):
 
     class Meta:
         model = Products
-        fields = [ 'product_name', 'category_name', 'description', 'warrenty', 
+        fields = ['id', 'product_name', 'category_name', 'description', 'warrenty', 
                   'unit_price', 'offer_price', 'approx_time', 'stock', 'size', 
                   'img1','img2','img3','img4','img5'] 
 
@@ -120,60 +120,32 @@ class CartSerializer(serializers.ModelSerializer):
         return sum(item.total_price for item in obj.items.all())
 
 class OrderItemSerializer(serializers.ModelSerializer):
-    product_name = serializers.CharField(source='product.product_name', read_only=True)
-
     class Meta:
         model = OrderItem
-        fields = ['id', 'product', 'product_name', 'quantity', 'price']
+        fields = ['product', 'quantity', 'price']
 
 class OrderSerializer(serializers.ModelSerializer):
     order_items = OrderItemSerializer(many=True, read_only=True)
-    product = serializers.IntegerField(write_only=True)
-    quantity = serializers.IntegerField()
-    shipping_address = serializers.CharField()
+    total_payable=serializers.ReadOnlyField()
+    tax=serializers.ReadOnlyField()
+    class Meta:
+        model = Order
+        fields = ['id', 'user', 'shipping_address','total_payable','tax', 'total_amount', 'order_date', 'status', 'order_items']
+
+
+class OrderItemSer(serializers.ModelSerializer):
+    product = ProductSer(read_only=True)  # Nest ProductSer to include full product details
+
+    class Meta:
+        model = OrderItem
+        fields = ['product', 'quantity', 'price']
+
+
+class OrderSer(serializers.ModelSerializer):
+    order_items = OrderItemSer(many=True, read_only=True)  # Use the updated OrderItemSer
+    total_payable = serializers.ReadOnlyField()
+    tax = serializers.ReadOnlyField()
 
     class Meta:
         model = Order
-        fields = ['id', 'shipping_address', 'product', 'quantity','order_items']
-
-    def create(self, validated_data):
-        user = self.context['request'].user
-        product_id = validated_data.pop('product')
-        quantity = validated_data.pop('quantity')
-
-        # Fetch the product
-        product = Products.objects.get(id=product_id)
-        if quantity > product.stock:
-            raise serializers.ValidationError("Not enough stock available.")
-        total_price = product.offer_price * quantity
-        # Create the order
-        order = Order.objects.create(user=user, **validated_data,total_amount=total_price)
-
-        # Create the order item
-        
-        OrderItem.objects.create(
-            order=order,
-            product=product,
-            quantity=quantity,
-            price=product.offer_price
-        )
-
-        # Update the order's total amount
-        # order.total_amount = total_price
-        # order.save()
-
-        # Reduce the product stock
-        product.stock -= quantity
-        product.save()
-
-        return order
-    
-
-class OrderViewSerializer(serializers.ModelSerializer):
-    product_id = serializers.IntegerField()
-    quantity = serializers.IntegerField()
-    shipping_address = serializers.CharField()
-
-    class Meta:
-        model = Order
-        fields = ['id', 'user', 'order_date', 'shipping_address', 'total_amount', 'status', 'product_id', 'quantity']
+        fields = ['id','user','shipping_address','total_payable','tax','total_amount','order_date','status','order_items']

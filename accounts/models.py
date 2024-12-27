@@ -99,47 +99,39 @@ class Cart(models.Model):
     def __str__(self):
         return f"Cart of {self.user.name}"
     
-    # @property
-    # def total_amount(self):
-    #     """Calculate total amount of all items in the cart"""
-    #     return sum(item.total_price for item in self.items.all())
+
     
 class CartItem(models.Model):
     cart = models.ForeignKey(Cart, related_name='items', on_delete=models.CASCADE) 
     product = models.ForeignKey(Products, on_delete=models.CASCADE)
-    quantity = models.PositiveIntegerField(default=0)  
+    quantity = models.PositiveIntegerField(default=1)  
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.product.product_name} ({self.quantity}) in {self.cart.user.name}'s cart"
     
-    @property
-    def total_price(self):
-        return self.product.offer_price * self.quantity
+    # @property
+    # def total_price(self):
+    #     return self.product.offer_price * self.quantity
     
     
-# class OrderProduct(models.Model):
-#     user=models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='orders')
-#     created_at=models.DateTimeField(auto_now_add=True)
-#     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-#     status=models.CharField(max_length=20, choices=[('pending', 'Pending'), ('completed', 'Completed')], default='pending')
 
-#     def __str__(self):
-#         return f"Order {self.id} by {self.user.name}"
 
 class Order(models.Model):
     user=models.ForeignKey(CustomUser,on_delete=models.CASCADE)
     order_date=models.DateTimeField(auto_now_add=True)
     shipping_address=models.TextField()
     total_amount=models.DecimalField(max_digits=10, decimal_places=2)
+    tax=models.FloatField(null=True)
+    total_payable=models.FloatField(null=True)
     status=models.CharField(max_length=20, choices=[('pending', 'Pending'), ('completed', 'Completed')], default='pending')
 
     def __str__(self):
         return f"Order for {self.user.name} on {self.order_date}"
 
-    def update_total_amount(self):
-        self.total_amount = sum(item.total_price for item in self.cart.items.all())
-        self.save()
+    # def update_total_amount(self):
+    #     self.total_amount = sum(item.total_price for item in self.cart.items.all())
+    #     self.save()
 
     
 class OrderItem(models.Model):
